@@ -29,7 +29,12 @@ export default function App() {
   }
 
   async function copyQuote() {
-    const quote = `${bundle.name}: ${result.latexCount} latex, ${selections.smallFoil} small foil, ${selections.largeFoil} large foil${selections.additionalLatex ? `, ${selections.additionalLatex} additional latex` : ''}. Total: ${money(result.finalPrice)}.`
+    const quoteItems = [
+      result.latexCount > 0 ? `${result.latexCount} latex` : '',
+      selections.smallFoil > 0 ? `${selections.smallFoil} small foil` : '',
+      selections.largeFoil > 0 ? `${selections.largeFoil} large foil` : '',
+    ].filter(Boolean)
+    const quote = `${bundle.name}: ${quoteItems.join(', ')}. Total: ${money(result.finalPrice)}.`
     try { await navigator.clipboard.writeText(quote) } catch { /* clipboard is optional in preview */ }
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1800)
