@@ -1,5 +1,45 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Caslon #3";
+  src: url('/fonts/Caslon3.woff') format('woff');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Caslon #3";
+  src: url('/fonts/Caslon3ITALIC.woff') format('woff');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Hello Agnes";
+  src: url('/fonts/hello-agnes-regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Glacial Indifference";
+  src: url('/fonts/GlacialIndifference-Regular.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Glacial Indifference";
+  src: url('/fonts/GlacialIndifference-Bold.otf') format('opentype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 @theme {
   --font-heading: "Caslon #3", "Libre Baskerville", Georgia, serif;
   --font-subheading: "Hello Agnes", "Brush Script MT", cursive;
