@@ -49,8 +49,8 @@ export default function App() {
         <section className="hero">
           <div className="hero-kicker"><span className="squiggle">〰</span> HELIUM BOUQUETS</div>
           <h1>Let’s make it<br /><em>float.</em></h1>
-          <p className="hero-copy">Build a beautiful helium bouquet in three easy steps. Pick a starting point, make it yours, and send the quote.</p>
           <div className="hero-sticker" aria-hidden="true"><Sparkles size={17} /><span>party<br />starts here</span></div>
+          <p className="hero-copy">Build a beautiful helium bouquet in three easy steps. Pick a starting point, make it yours, and send the quote.</p>
         </section>
 
         <div className="calculator-grid">
