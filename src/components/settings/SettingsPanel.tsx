@@ -129,11 +129,12 @@ export function SettingsPanel({ settings, onClose, onSave }: Props) {
               </div>
               <div className="settings-components">
                 <div className="components-heading"><span>Base composition</span><button type="button" className="component-add" onClick={() => addComponent(item.id)}><Plus size={13} /> Add component</button></div>
+                <div className="component-row component-row-header" aria-hidden="true"><span>Type</span><span>Component name</span><span>Qty</span><span>Size (in)</span><span /></div>
                 {item.components.map((component) => <div className="component-row" key={component.id}>
                   <select value={component.type} onChange={(event) => updateComponent(item.id, component.id, 'type', event.target.value)} aria-label="Component type"><option value="latex">Latex</option><option value="foil">Foil</option></select>
                   <input value={component.name} onChange={(event) => updateComponent(item.id, component.id, 'name', event.target.value)} aria-label="Component name" placeholder="e.g. Character foil" />
-                  <input type="number" min="0" step="1" value={component.count} onChange={(event) => updateComponent(item.id, component.id, 'count', event.target.value)} aria-label="Component quantity" />
-                  <input type="number" min="0" step="1" value={component.size} onChange={(event) => updateComponent(item.id, component.id, 'size', event.target.value)} aria-label="Component size" />
+                  <input type="number" min="0" step="1" value={component.count} onChange={(event) => updateComponent(item.id, component.id, 'count', event.target.value)} aria-label="Component quantity" placeholder="Qty" />
+                  <input type="number" min="0" step="1" value={component.size} onChange={(event) => updateComponent(item.id, component.id, 'size', event.target.value)} aria-label="Component size" placeholder="Inches" />
                   <button type="button" className="delete-button" onClick={() => removeComponent(item.id, component.id)} disabled={item.components.length <= 1} aria-label={`Delete ${component.name}`}><Trash2 size={15} /></button>
                 </div>)}
                 <p className="component-help">Included components are covered by the base bundle price. Sizes are descriptive and do not change the base price.</p>
