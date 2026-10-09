@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, RotateCcw, Save, Trash2, X } from 'lucide-react'
-import { clonePricingSettings, defaultPricingSettings, type Bundle, type Customization, type PricingSettings } from '../../config/pricing'
+import { clonePricingSettings, defaultPricingSettings, type Bundle, type BundleComponent, type Customization, type PricingSettings } from '../../config/pricing'
 
 type Props = {
   settings: PricingSettings
@@ -13,8 +13,7 @@ const emptyBundle: Bundle = {
   name: '',
   eyebrow: 'New bundle',
   description: '',
-  latexSize: 11,
-  latexCount: 5,
+  components: [{ id: 'new-bundle-latex', type: 'latex', name: 'Latex balloons', count: 5, size: 11 }],
   basePrice: 35,
   includesBase: true,
   active: true,
@@ -44,7 +43,38 @@ export function SettingsPanel({ settings, onClose, onSave }: Props) {
       ...current,
       bundles: current.bundles.map((item) => item.id !== id ? item : {
         ...item,
-        [field]: typeof value === 'boolean' ? value : ['latexSize', 'latexCount', 'basePrice'].includes(field) ? numberValue(value, Number(item[field])) : value,
+        [field]: typeof value === 'boolean' ? value : field === 'basePrice' ? numberValue(value, item.basePrice) : value,
+      }),
+    }))
+  }
+
+  function updateComponent(bundleId: string, componentId: string, field: keyof BundleComponent, value: string) {
+    setDraft((current) => ({
+      ...current,
+      bundles: current.bundles.map((bundle) => bundle.id !== bundleId ? bundle : {
+        ...bundle,
+        components: bundle.components.map((component) => component.id !== componentId ? component : {
+          ...component,
+          [field]: field === 'count' || field === 'size' ? numberValue(value, component[field]) : value,
+        }),
+      }),
+    }))
+  }
+
+  function addComponent(bundleId: string) {
+    const component: BundleComponent = { id: `component-${Date.now()}`, type: 'latex', name: 'Latex balloons', count: 1, size: 11 }
+    setDraft((current) => ({
+      ...current,
+      bundles: current.bundles.map((bundle) => bundle.id !== bundleId ? bundle : { ...bundle, components: [...bundle.components, component] }),
+    }))
+  }
+
+  function removeComponent(bundleId: string, componentId: string) {
+    setDraft((current) => ({
+      ...current,
+      bundles: current.bundles.map((bundle) => bundle.id !== bundleId ? bundle : {
+        ...bundle,
+        components: bundle.components.length <= 1 ? bundle.components : bundle.components.filter((component) => component.id !== componentId),
       }),
     }))
   }
@@ -93,9 +123,18 @@ export function SettingsPanel({ settings, onClose, onSave }: Props) {
                 <label>Bundle name<input value={item.name} onChange={(event) => updateBundle(item.id, 'name', event.target.value)} placeholder="e.g. Birthday sparkle" /></label>
                 <label>Eyebrow<input value={item.eyebrow} onChange={(event) => updateBundle(item.id, 'eyebrow', event.target.value)} placeholder="e.g. A little extra joy" /></label>
                 <label className="wide-field">Description<input value={item.description} onChange={(event) => updateBundle(item.id, 'description', event.target.value)} placeholder={'e.g. 6 × 11” latex balloons + weighted base'} /></label>
-                <label>Latex size<input type="number" min="0" step="1" value={item.latexSize} onChange={(event) => updateBundle(item.id, 'latexSize', event.target.value)} /></label>
-                <label>Latex count<input type="number" min="0" step="1" value={item.latexCount} onChange={(event) => updateBundle(item.id, 'latexCount', event.target.value)} /></label>
                 <label>Base price<input type="number" min="0" step="1" value={item.basePrice} onChange={(event) => updateBundle(item.id, 'basePrice', event.target.value)} /></label>
+              </div>
+              <div className="settings-components">
+                <div className="components-heading"><span>Base composition</span><button type="button" className="component-add" onClick={() => addComponent(item.id)}><Plus size={13} /> Add component</button></div>
+                {item.components.map((component) => <div className="component-row" key={component.id}>
+                  <select value={component.type} onChange={(event) => updateComponent(item.id, component.id, 'type', event.target.value)} aria-label="Component type"><option value="latex">Latex</option><option value="foil">Foil</option></select>
+                  <input value={component.name} onChange={(event) => updateComponent(item.id, component.id, 'name', event.target.value)} aria-label="Component name" placeholder="e.g. Character foil" />
+                  <input type="number" min="0" step="1" value={component.count} onChange={(event) => updateComponent(item.id, component.id, 'count', event.target.value)} aria-label="Component quantity" />
+                  <input type="number" min="0" step="1" value={component.size} onChange={(event) => updateComponent(item.id, component.id, 'size', event.target.value)} aria-label="Component size" />
+                  <button type="button" className="delete-button" onClick={() => removeComponent(item.id, component.id)} disabled={item.components.length <= 1} aria-label={`Delete ${component.name}`}><Trash2 size={15} /></button>
+                </div>)}
+                <p className="component-help">Included components are covered by the base bundle price. Sizes are descriptive and do not change the base price.</p>
               </div>
               <div className="settings-toggles"><label className="toggle-label"><input type="checkbox" checked={item.includesBase} onChange={(event) => updateBundle(item.id, 'includesBase', event.target.checked)} /> Includes weighted base</label><label className="toggle-label"><input type="checkbox" checked={item.active} onChange={(event) => updateBundle(item.id, 'active', event.target.checked)} /> Show in calculator</label></div>
             </div>)}

@@ -50,11 +50,7 @@ export default function App() {
   }
 
   async function copyQuote() {
-    const quoteItems = [
-      result.latexCount > 0 ? `${result.latexCount} latex` : '',
-      selections.smallFoil > 0 ? `${selections.smallFoil} small foil` : '',
-      selections.largeFoil > 0 ? `${selections.largeFoil} large foil` : '',
-    ].filter(Boolean)
+    const quoteItems = result.composition.map((item) => `${item.count} ${item.name.toLowerCase()}${item.size > 0 ? ` (${item.size}")` : ''}`)
     const quote = `${bundle.name}: ${quoteItems.join(', ')}. Total: ${money(result.finalPrice)}.`
     try { await navigator.clipboard.writeText(quote) } catch { /* clipboard is optional in preview */ }
     setCopied(true)
@@ -112,13 +108,11 @@ export default function App() {
               <span className="composition-balloon latex" />
               <span className="composition-balloon small" />
               <span className="composition-balloon large" />
-              <div><strong>{result.latexCount} latex</strong><br /><span>{selections.smallFoil} small foil · {selections.largeFoil} large foil</span></div>
+              <div className="composition-lines">{result.composition.map((item) => <span key={item.id}><strong>{item.count}</strong> {item.name.toLowerCase()}{item.size > 0 ? ` · ${item.size}"` : ''}</span>)}</div>
             </div>
             <div className="price-breakdown">
               <div><span>{bundle.name}</span><strong>{money(bundle.basePrice)}</strong></div>
-              {selections.smallFoil > 0 && <div><span>{selections.smallFoil} × {customizations.find((item) => item.id === 'smallFoil')?.name.toLowerCase()}</span><strong>+{money(selections.smallFoil * (customizations.find((item) => item.id === 'smallFoil')?.unitPrice ?? 0))}</strong></div>}
-              {selections.largeFoil > 0 && <div><span>{selections.largeFoil} × {customizations.find((item) => item.id === 'largeFoil')?.name.toLowerCase()}</span><strong>+{money(selections.largeFoil * (customizations.find((item) => item.id === 'largeFoil')?.unitPrice ?? 0))}</strong></div>}
-              {selections.additionalLatex > 0 && <div><span>{selections.additionalLatex} × {customizations.find((item) => item.id === 'additionalLatex')?.name.toLowerCase()}</span><strong>+{money(selections.additionalLatex * (customizations.find((item) => item.id === 'additionalLatex')?.unitPrice ?? 0))}</strong></div>}
+              {customizations.map((item) => selections[item.id] > 0 && <div key={item.id}><span>{selections[item.id]} × {item.name.toLowerCase()}</span><strong>+{money(selections[item.id] * item.unitPrice)}</strong></div>)}
               <div className="breakdown-rule" />
               <div className="raw-total"><span>Calculated price</span><strong>{money(result.rawPrice)}</strong></div>
               {result.roundingAdjustment > 0 && <div className="rounding-row"><span>Pricing round-up</span><strong>+{money(result.roundingAdjustment)}</strong></div>}
