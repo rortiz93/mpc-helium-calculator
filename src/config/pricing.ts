@@ -19,7 +19,7 @@ export type Customization = {
   unitLabel: string
 }
 
-export const baseBundles: Bundle[] = [
+const defaultBundles: Bundle[] = [
   {
     id: 'classic-5',
     name: 'Classic 5',
@@ -55,7 +55,7 @@ export const baseBundles: Bundle[] = [
   },
 ]
 
-export const customizations: Customization[] = [
+const defaultCustomizations: Customization[] = [
   {
     id: 'smallFoil',
     name: 'Small foil',
@@ -82,6 +82,39 @@ export const customizations: Customization[] = [
   },
 ]
 
+export type PricingSettings = {
+  bundles: Bundle[]
+  customizations: Customization[]
+}
+
+export const defaultPricingSettings: PricingSettings = {
+  bundles: defaultBundles,
+  customizations: defaultCustomizations,
+}
+
+export const pricingStorageKey = 'mpc-helium-pricing-settings'
+
+export function loadPricingSettings(): PricingSettings {
+  if (typeof window === 'undefined') return clonePricingSettings(defaultPricingSettings)
+  try {
+    const stored = window.localStorage.getItem(pricingStorageKey)
+    if (!stored) return clonePricingSettings(defaultPricingSettings)
+    const parsed = JSON.parse(stored) as PricingSettings
+    if (!Array.isArray(parsed.bundles) || !Array.isArray(parsed.customizations)) throw new Error('Invalid pricing settings')
+    return parsed
+  } catch {
+    return clonePricingSettings(defaultPricingSettings)
+  }
+}
+
+export function savePricingSettings(settings: PricingSettings) {
+  window.localStorage.setItem(pricingStorageKey, JSON.stringify(settings))
+}
+
+export function clonePricingSettings(settings: PricingSettings): PricingSettings {
+  return JSON.parse(JSON.stringify(settings)) as PricingSettings
+}
+
 export type Selections = Record<Customization['id'], number>
 
 export const emptySelections: Selections = {
@@ -94,11 +127,12 @@ export function getMaxFoils(bundle: Bundle) {
   return bundle.latexCount
 }
 
-export function calculatePrice(bundle: Bundle, selections: Selections) {
+export function calculatePrice(bundle: Bundle, selections: Selections, customizations: Customization[] = defaultCustomizations) {
+  const prices = Object.fromEntries(customizations.map((item) => [item.id, item.unitPrice])) as Record<Customization['id'], number>
   const rawPrice = bundle.basePrice +
-    selections.smallFoil * 10 +
-    selections.largeFoil * 20 +
-    selections.additionalLatex * 6
+    selections.smallFoil * prices.smallFoil +
+    selections.largeFoil * prices.largeFoil +
+    selections.additionalLatex * prices.additionalLatex
   const finalPrice = Math.ceil(rawPrice / 5) * 5
   return {
     rawPrice,

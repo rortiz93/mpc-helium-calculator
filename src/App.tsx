@@ -1,23 +1,44 @@
-import { useMemo, useState } from 'react'
-import { Check, Clipboard, Info, Sparkles } from 'lucide-react'
-import { baseBundles, calculatePrice, customizations, emptySelections, getMaxFoils, type Selections } from './config/pricing'
+import { useEffect, useMemo, useState } from 'react'
+import { Check, Clipboard, Info, Settings2, Sparkles } from 'lucide-react'
+import { calculatePrice, emptySelections, getMaxFoils, loadPricingSettings, savePricingSettings, type PricingSettings, type Selections } from './config/pricing'
 import { QuantityControl } from './components/calculator/QuantityControl'
+import { SettingsPanel } from './components/settings/SettingsPanel'
 
 const logoSrc = 'https://images.squarespace-cdn.com/content/v1/65143510f9985b2f4c1cb9ae/29161b60-2754-46e7-8db6-069e08ad582a/Meg+O.png?format=1500w'
 
 function money(value: number) { return `$${value}` }
 
 export default function App() {
-  const [selectedId, setSelectedId] = useState(baseBundles[0].id)
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings>(() => loadPricingSettings())
+  const [selectedId, setSelectedId] = useState(() => pricingSettings.bundles.find((item) => item.active)?.id ?? pricingSettings.bundles[0].id)
   const [selections, setSelections] = useState<Selections>(emptySelections)
   const [copied, setCopied] = useState(false)
-  const bundle = baseBundles.find((item) => item.id === selectedId) ?? baseBundles[0]
-  const result = useMemo(() => calculatePrice(bundle, selections), [bundle, selections])
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const bundles = pricingSettings.bundles
+  const customizations = pricingSettings.customizations
+  const activeBundles = bundles.filter((item) => item.active)
+  const bundle = bundles.find((item) => item.id === selectedId) ?? activeBundles[0] ?? bundles[0]
+  const result = useMemo(() => calculatePrice(bundle, selections, customizations), [bundle, selections, customizations])
   const foilCount = selections.smallFoil + selections.largeFoil
+
+  useEffect(() => {
+    if (!activeBundles.some((item) => item.id === selectedId)) setSelectedId(activeBundles[0]?.id ?? bundles[0].id)
+  }, [pricingSettings.bundles, selectedId])
 
   function chooseBundle(id: string) {
     setSelectedId(id)
     setSelections(emptySelections)
+  }
+
+  function saveSettings(nextSettings: PricingSettings) {
+    const hasActiveBundle = nextSettings.bundles.some((item) => item.active)
+    const normalized = hasActiveBundle ? nextSettings : {
+      ...nextSettings,
+      bundles: nextSettings.bundles.map((item, index) => index === 0 ? { ...item, active: true } : item),
+    }
+    setPricingSettings(normalized)
+    savePricingSettings(normalized)
+    setSettingsOpen(false)
   }
 
   function change(id: keyof Selections, delta: number) {
@@ -47,7 +68,7 @@ export default function App() {
         <a className="brand-lockup" href="https://www.megspartyco.com" aria-label="Meg’s Party Co. website">
           <img src={logoSrc} alt="Meg’s Party Co." />
         </a>
-        <div className="header-note"><span className="status-dot" /> Ready to party</div>
+        <div className="header-actions"><div className="header-note"><span className="status-dot" /> Ready to party</div><button type="button" className="settings-trigger" onClick={() => setSettingsOpen(true)}><Settings2 size={15} /> Settings</button></div>
       </header>
 
       <main className="page-content">
@@ -63,7 +84,7 @@ export default function App() {
             <section className="flow-section">
               <div className="section-heading"><span className="step-number">01</span><div><p className="section-kicker">Start with a bundle</p><h2>Choose your base</h2></div></div>
               <div className="bundle-grid">
-                {baseBundles.filter((item) => item.active).map((item) => {
+                {activeBundles.map((item) => {
                   const selected = item.id === selectedId
                   return <button key={item.id} type="button" className={`bundle-card ${selected ? 'selected' : ''}`} onClick={() => chooseBundle(item.id)} aria-pressed={selected}>
                     <div className="bundle-card-top"><span className="bundle-eyebrow">{item.eyebrow}</span>{selected && <span className="selected-mark"><Check size={13} /></span>}</div>
@@ -95,9 +116,9 @@ export default function App() {
             </div>
             <div className="price-breakdown">
               <div><span>{bundle.name}</span><strong>{money(bundle.basePrice)}</strong></div>
-              {selections.smallFoil > 0 && <div><span>{selections.smallFoil} × small foil</span><strong>+{money(selections.smallFoil * 10)}</strong></div>}
-              {selections.largeFoil > 0 && <div><span>{selections.largeFoil} × large foil</span><strong>+{money(selections.largeFoil * 20)}</strong></div>}
-              {selections.additionalLatex > 0 && <div><span>{selections.additionalLatex} × additional latex</span><strong>+{money(selections.additionalLatex * 6)}</strong></div>}
+              {selections.smallFoil > 0 && <div><span>{selections.smallFoil} × {customizations.find((item) => item.id === 'smallFoil')?.name.toLowerCase()}</span><strong>+{money(selections.smallFoil * (customizations.find((item) => item.id === 'smallFoil')?.unitPrice ?? 0))}</strong></div>}
+              {selections.largeFoil > 0 && <div><span>{selections.largeFoil} × {customizations.find((item) => item.id === 'largeFoil')?.name.toLowerCase()}</span><strong>+{money(selections.largeFoil * (customizations.find((item) => item.id === 'largeFoil')?.unitPrice ?? 0))}</strong></div>}
+              {selections.additionalLatex > 0 && <div><span>{selections.additionalLatex} × {customizations.find((item) => item.id === 'additionalLatex')?.name.toLowerCase()}</span><strong>+{money(selections.additionalLatex * (customizations.find((item) => item.id === 'additionalLatex')?.unitPrice ?? 0))}</strong></div>}
               <div className="breakdown-rule" />
               <div className="raw-total"><span>Calculated price</span><strong>{money(result.rawPrice)}</strong></div>
               {result.roundingAdjustment > 0 && <div className="rounding-row"><span>Pricing round-up</span><strong>+{money(result.roundingAdjustment)}</strong></div>}
@@ -109,6 +130,7 @@ export default function App() {
         </div>
       </main>
       <footer className="site-footer"><span>Meg’s Party Co.</span><span>Turning life’s moments into unforgettable celebrations.</span></footer>
+      {settingsOpen && <SettingsPanel settings={pricingSettings} onClose={() => setSettingsOpen(false)} onSave={saveSettings} />}
     </div>
   )
 }
