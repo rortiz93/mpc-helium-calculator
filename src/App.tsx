@@ -12,12 +12,19 @@ export default function App() {
   const [pricingSettings, setPricingSettings] = useState<PricingSettings>(() => loadPricingSettings())
   const [selectedId, setSelectedId] = useState(() => pricingSettings.bundles.find((item) => item.active)?.id ?? pricingSettings.bundles[0].id)
   const [selections, setSelections] = useState<Selections>(emptySelections)
+  const [baseComponentQuantity, setBaseComponentQuantity] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const bundles = pricingSettings.bundles
   const customizations = pricingSettings.customizations
   const activeBundles = bundles.filter((item) => item.active)
-  const bundle = bundles.find((item) => item.id === selectedId) ?? activeBundles[0] ?? bundles[0]
+  const selectedBundle = bundles.find((item) => item.id === selectedId) ?? activeBundles[0] ?? bundles[0]
+  const basePricingComponent = selectedBundle.components.find((item) => item.id === selectedBundle.basePriceComponentId) ?? selectedBundle.components[0]
+  const bundle = useMemo(() => {
+    if (selectedBundle.basePriceMode !== 'perUnit' || !basePricingComponent) return selectedBundle
+    const count = baseComponentQuantity ?? basePricingComponent.count
+    return { ...selectedBundle, components: selectedBundle.components.map((item) => item.id === basePricingComponent.id ? { ...item, count } : item) }
+  }, [selectedBundle, basePricingComponent, baseComponentQuantity])
   const result = useMemo(() => calculatePrice(bundle, selections, customizations), [bundle, selections, customizations])
   const foilCount = selections.smallFoil + selections.largeFoil
 
@@ -28,6 +35,13 @@ export default function App() {
   function chooseBundle(id: string) {
     setSelectedId(id)
     setSelections(emptySelections)
+    setBaseComponentQuantity(null)
+  }
+
+  function changeBaseComponentQuantity(delta: number) {
+    if (bundle.basePriceMode !== 'perUnit' || !basePricingComponent) return
+    const current = baseComponentQuantity ?? basePricingComponent.count
+    setBaseComponentQuantity(Math.max(1, current + delta))
   }
 
   function saveSettings(nextSettings: PricingSettings) {
@@ -95,6 +109,7 @@ export default function App() {
             <section className="flow-section customize-section">
               <div className="section-heading"><span className="step-number">02</span><div><p className="section-kicker">Make it yours</p><h2>Add a little extra</h2></div></div>
               <div className="custom-card">
+                {bundle.basePriceMode === 'perUnit' && basePricingComponent && <QuantityControl label={basePricingComponent.name} value={baseComponentQuantity ?? basePricingComponent.count} price={`+$${bundle.basePrice} each`} description="Included base component" onDecrease={() => changeBaseComponentQuantity(-1)} onIncrease={() => changeBaseComponentQuantity(1)} />}
                 {customizations.map((item) => <QuantityControl key={item.id} label={item.name} value={selections[item.id]} price={item.unitLabel} description={item.description} onDecrease={() => change(item.id, -1)} onIncrease={() => change(item.id, 1)} increaseDisabled={(item.id === 'smallFoil' || item.id === 'largeFoil') && foilCount >= getMaxFoils(bundle)} />)}
                 {foilCount >= getMaxFoils(bundle) && <div className="limit-note"><Info size={15} /> All of this bundle’s latex spots are filled — add extra latex to grow the bouquet.</div>}
               </div>
