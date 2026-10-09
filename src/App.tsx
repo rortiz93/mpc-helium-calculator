@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, Clipboard, Info, Settings2, Sparkles } from 'lucide-react'
-import { calculatePrice, emptySelections, getMaxFoils, loadPricingSettings, savePricingSettings, type PricingSettings, type Selections } from './config/pricing'
+import { calculatePrice, emptySelections, getBundleBasePrice, getMaxFoils, loadPricingSettings, savePricingSettings, type PricingSettings, type Selections } from './config/pricing'
 import { QuantityControl } from './components/calculator/QuantityControl'
 import { SettingsPanel } from './components/settings/SettingsPanel'
 
@@ -86,7 +86,7 @@ export default function App() {
                     <div className="bundle-card-top"><span className="bundle-eyebrow">{item.eyebrow}</span>{selected && <span className="selected-mark"><Check size={13} /></span>}</div>
                     <h3>{item.name}</h3>
                     <p>{item.description}</p>
-                    <div className="bundle-price"><span>from</span> {money(item.basePrice)}</div>
+                    <div className="bundle-price"><span>from</span> {money(getBundleBasePrice(item))}</div>
                   </button>
                 })}
               </div>
@@ -111,7 +111,7 @@ export default function App() {
               <div className="composition-lines">{result.composition.map((item) => <span key={item.id}><strong>{item.count}</strong> {item.name.toLowerCase()}{item.size > 0 ? ` · ${item.size}"` : ''}</span>)}</div>
             </div>
             <div className="price-breakdown">
-              <div><span>{bundle.name}</span><strong>{money(bundle.basePrice)}</strong></div>
+              <div><span>{bundle.name}</span><strong>{money(getBundleBasePrice(bundle))}</strong></div>
               {customizations.map((item) => selections[item.id] > 0 && <div key={item.id}><span>{selections[item.id]} × {item.name.toLowerCase()}</span><strong>+{money(selections[item.id] * item.unitPrice)}</strong></div>)}
               <div className="breakdown-rule" />
               <div className="raw-total"><span>Calculated price</span><strong>{money(result.rawPrice)}</strong></div>

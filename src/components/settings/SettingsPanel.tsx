@@ -14,7 +14,7 @@ const emptyBundle: Bundle = {
   eyebrow: 'New bundle',
   description: '',
   components: [{ id: 'new-bundle-latex', type: 'latex', name: 'Latex balloons', count: 5, size: 11 }],
-  basePrice: 35,
+  basePrice: 35, basePriceMode: 'fixed',
   includesBase: true,
   active: true,
 }
@@ -123,7 +123,9 @@ export function SettingsPanel({ settings, onClose, onSave }: Props) {
                 <label>Bundle name<input value={item.name} onChange={(event) => updateBundle(item.id, 'name', event.target.value)} placeholder="e.g. Birthday sparkle" /></label>
                 <label>Eyebrow<input value={item.eyebrow} onChange={(event) => updateBundle(item.id, 'eyebrow', event.target.value)} placeholder="e.g. A little extra joy" /></label>
                 <label className="wide-field">Description<input value={item.description} onChange={(event) => updateBundle(item.id, 'description', event.target.value)} placeholder={'e.g. 6 × 11” latex balloons + weighted base'} /></label>
-                <label>Base price<input type="number" min="0" step="1" value={item.basePrice} onChange={(event) => updateBundle(item.id, 'basePrice', event.target.value)} /></label>
+                <label>{item.basePriceMode === 'perUnit' ? 'Price per base unit' : 'Base price'}<input type="number" min="0" step="1" value={item.basePrice} onChange={(event) => updateBundle(item.id, 'basePrice', event.target.value)} /></label>
+                <label>Base pricing<select value={item.basePriceMode} onChange={(event) => updateBundle(item.id, 'basePriceMode', event.target.value)}><option value="fixed">Fixed bundle price</option><option value="perUnit">Per selected component</option></select></label>
+                {item.basePriceMode === 'perUnit' && <label>Priced component<select value={item.basePriceComponentId ?? item.components[0]?.id} onChange={(event) => updateBundle(item.id, 'basePriceComponentId', event.target.value)}>{item.components.map((component) => <option key={component.id} value={component.id}>{component.name}</option>)}</select></label>}
               </div>
               <div className="settings-components">
                 <div className="components-heading"><span>Base composition</span><button type="button" className="component-add" onClick={() => addComponent(item.id)}><Plus size={13} /> Add component</button></div>

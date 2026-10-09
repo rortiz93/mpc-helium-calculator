@@ -13,6 +13,8 @@ export type Bundle = {
   description: string
   components: BundleComponent[]
   basePrice: number
+  basePriceMode: 'fixed' | 'perUnit'
+  basePriceComponentId?: string
   includesBase: boolean
   active: boolean
 }
@@ -34,24 +36,24 @@ const foil = (id: string, name: string, count: number, size: number): BundleComp
 const defaultBundles: Bundle[] = [
   {
     id: 'classic-5', name: 'Classic 5', eyebrow: 'The everyday classic', description: '5 × 11” latex balloons + weighted base',
-    components: [latex('classic-5-latex', 5, 11)], basePrice: 35, includesBase: true, active: true,
+    components: [latex('classic-5-latex', 5, 11)], basePrice: 35, basePriceMode: 'fixed', includesBase: true, active: true,
   },
   {
     id: 'classic-10', name: 'Classic 10', eyebrow: 'More to celebrate', description: '10 × 11” latex balloons + weighted base',
-    components: [latex('classic-10-latex', 10, 11)], basePrice: 65, includesBase: true, active: true,
+    components: [latex('classic-10-latex', 10, 11)], basePrice: 65, basePriceMode: 'fixed', includesBase: true, active: true,
   },
   {
     id: 'statement-17', name: '17” Statement', eyebrow: 'Make it a moment', description: '4 × 17” latex balloons + weighted base',
-    components: [latex('statement-17-latex', 4, 17)], basePrice: 70, includesBase: true, active: true,
+    components: [latex('statement-17-latex', 4, 17)], basePrice: 70, basePriceMode: 'fixed', includesBase: true, active: true,
   },
   {
     id: 'foil-number-letter', name: 'Foil Number / Letter', eyebrow: 'A special statement', description: '1 × 40” foil number or letter + weighted base',
-    components: [foil('foil-number-letter-main', 'Number / letter foil', 1, 40)], basePrice: 22, includesBase: true, active: true,
+    components: [foil('foil-number-letter-main', 'Number / letter foil', 1, 40)], basePrice: 22, basePriceMode: 'perUnit', basePriceComponentId: 'foil-number-letter-main', includesBase: true, active: true,
   },
   {
     id: 'theme-number-foil', name: 'Theme Number Foil', eyebrow: 'Themed and joyful', description: 'Number foil + character foil + 5 × 11” latex',
     components: [foil('theme-number', 'Number foil', 1, 40), foil('theme-character', 'Character foil', 1, 18), latex('theme-latex', 5, 11)],
-    basePrice: 60, includesBase: true, active: true,
+    basePrice: 60, basePriceMode: 'fixed', includesBase: true, active: true,
   },
 ]
 
@@ -68,8 +70,8 @@ export const defaultPricingSettings: PricingSettings = { bundles: defaultBundles
 export const pricingStorageKey = 'mpc-helium-pricing-settings'
 
 function normalizeBundle(bundle: Bundle & { latexSize?: number; latexCount?: number }): Bundle {
-  if (Array.isArray(bundle.components)) return bundle
-  return { ...bundle, components: [latex(`${bundle.id}-latex`, bundle.latexCount ?? 0, bundle.latexSize ?? 11)] }
+  if (Array.isArray(bundle.components)) return { ...bundle, basePriceMode: bundle.basePriceMode ?? 'fixed' }
+  return { ...bundle, components: [latex(`${bundle.id}-latex`, bundle.latexCount ?? 0, bundle.latexSize ?? 11)], basePriceMode: bundle.basePriceMode ?? 'fixed' }
 }
 
 export function loadPricingSettings(): PricingSettings {
@@ -101,10 +103,16 @@ export function getMaxFoils(bundle: Bundle) {
   return bundle.components.filter((item) => item.type === 'latex').reduce((total, item) => total + item.count, 0)
 }
 
+export function getBundleBasePrice(bundle: Bundle) {
+  if (bundle.basePriceMode !== 'perUnit') return bundle.basePrice
+  const target = bundle.components.find((item) => item.id === bundle.basePriceComponentId) ?? bundle.components[0]
+  return bundle.basePrice * (target?.count ?? 0)
+}
+
 export function calculatePrice(bundle: Bundle, selections: Selections, customizations: Customization[] = defaultCustomizations) {
   const prices = Object.fromEntries(customizations.map((item) => [item.id, item.unitPrice])) as Record<CustomizationId, number>
   const customizationNames = Object.fromEntries(customizations.map((item) => [item.id, item.name])) as Record<CustomizationId, string>
-  const rawPrice = bundle.basePrice + selections.smallFoil * prices.smallFoil + selections.largeFoil * prices.largeFoil + selections.additionalLatex * prices.additionalLatex + selections.additionalFoil * prices.additionalFoil
+  const rawPrice = getBundleBasePrice(bundle) + selections.smallFoil * prices.smallFoil + selections.largeFoil * prices.largeFoil + selections.additionalLatex * prices.additionalLatex + selections.additionalFoil * prices.additionalFoil
   const finalPrice = Math.ceil(rawPrice / 5) * 5
   const composition: CompositionItem[] = bundle.components.map((item) => ({ ...item, source: 'base' }))
   let substitutionsRemaining = selections.smallFoil + selections.largeFoil

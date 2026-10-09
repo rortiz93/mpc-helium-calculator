@@ -162,8 +162,8 @@ h1 em { color: var(--color-brand-secondary); font-style: normal; }
 .settings-item-title { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--color-brand-text); font-size: 16px; font-weight: 700; padding-bottom: 2px; }
 .settings-swatch { width: 9px; height: 9px; border-radius: 50%; background: var(--color-brand-secondary); display: inline-block; }
 .settings-item label, .settings-form-grid label { display: grid; gap: 5px; color: var(--color-brand-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
-.settings-item input, .settings-form-grid input { width: 100%; min-width: 0; border: 1px solid var(--color-brand-border); background: #fffdfc; color: var(--color-brand-text); padding: 9px 10px; font: inherit; font-size: 14px; text-transform: none; letter-spacing: normal; outline: none; }
-.settings-item input:focus, .settings-form-grid input:focus { border-color: var(--color-brand-primary); box-shadow: 0 0 0 2px rgba(249,65,169,.12); }
+.settings-item input, .settings-form-grid input, .settings-form-grid select { width: 100%; min-width: 0; border: 1px solid var(--color-brand-border); background: #fffdfc; color: var(--color-brand-text); padding: 9px 10px; font: inherit; font-size: 14px; text-transform: none; letter-spacing: normal; outline: none; }
+.settings-item input:focus, .settings-form-grid input:focus, .settings-form-grid select:focus { border-color: var(--color-brand-primary); box-shadow: 0 0 0 2px rgba(249,65,169,.12); }
 .bundle-settings-card { display: grid; gap: 14px; }
 .bundle-settings-top { display: flex; justify-content: space-between; align-items: center; }
 .delete-button { border: 0; background: transparent; color: var(--color-brand-muted); padding: 4px; cursor: pointer; }
